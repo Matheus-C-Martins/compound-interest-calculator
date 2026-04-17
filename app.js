@@ -3,110 +3,30 @@
 
   const root = document.documentElement;
   const toggleBtn = document.querySelector('[data-theme-toggle]');
-  let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  root.setAttribute('data-theme', theme);
-  updateToggleIcon();
 
-  toggleBtn.addEventListener('click', () => {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', theme);
+  function getPreferredTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  let theme = getPreferredTheme();
+  root.setAttribute('data-theme', theme);
+  if (toggleBtn) {
     updateToggleIcon();
-    if (chartInstance) updateChart();
-    if (divChartInstance) renderOrUpdateDividendChart(lastDividendData);
-  });
+    toggleBtn.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', theme);
+      updateToggleIcon();
+      if (chartInstance) updateChart();
+      if (divChartInstance) renderOrUpdateDividendChart(lastDividendData);
+    });
+  }
 
   function updateToggleIcon() {
+    if (!toggleBtn) return;
     toggleBtn.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
     toggleBtn.innerHTML = theme === 'dark'
       ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`
       : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-  }
-
-  const inputs = {
-    principal: document.getElementById('principal'),
-    monthly:   document.getElementById('monthly'),
-    rate:      document.getElementById('rate'),
-    years:     document.getElementById('years'),
-    freq:      document.getElementById('freq'),
-    inflation: document.getElementById('inflation'),
-  };
-  const rateDisplay      = document.getElementById('rate-display');
-  const yearsDisplay     = document.getElementById('years-display');
-  const inflationDisplay = document.getElementById('inflation-display');
-
-  inputs.rate.addEventListener('input', () => {
-    rateDisplay.textContent = parseFloat(inputs.rate.value).toFixed(1) + '%';
-    calculate();
-  });
-  inputs.years.addEventListener('input', () => {
-    yearsDisplay.textContent = inputs.years.value + ' yrs';
-    document.getElementById('table-badge').textContent = inputs.years.value + ' years';
-    calculate();
-  });
-  inputs.inflation.addEventListener('input', () => {
-    inflationDisplay.textContent = parseFloat(inputs.inflation.value).toFixed(1) + '%';
-    calculate();
-  });
-  ['principal', 'monthly', 'freq'].forEach(k => { inputs[k].addEventListener('input', calculate); });
-
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    inputs.principal.value = 10000;
-    inputs.monthly.value   = 200;
-    inputs.rate.value      = 7;
-    inputs.years.value     = 20;
-    inputs.freq.value      = 12;
-    inputs.inflation.value = 2.5;
-    rateDisplay.textContent      = '7.0%';
-    yearsDisplay.textContent     = '20 yrs';
-    inflationDisplay.textContent = '2.5%';
-    document.getElementById('table-badge').textContent = '20 years';
-    calculate();
-  });
-
-  function calculate() {
-    const P     = Math.max(0, parseFloat(inputs.principal.value) || 0);
-    const m     = Math.max(0, parseFloat(inputs.monthly.value)   || 0);
-    const r     = Math.max(0, parseFloat(inputs.rate.value)      || 0) / 100;
-    const years = Math.max(1, parseInt(inputs.years.value)        || 1);
-    const n     = parseInt(inputs.freq.value) || 12;
-    const inf   = Math.max(0, parseFloat(inputs.inflation.value) || 0) / 100;
-
-    const yearlyData = [];
-    let balance = P;
-    let totalDeposited = P;
-
-    for (let y = 1; y <= years; y++) {
-      const periodsInYear = n;
-      const ratePerPeriod = r / n;
-      for (let p = 0; p < periodsInYear; p++) {
-        balance *= (1 + ratePerPeriod);
-        const monthlyContributions = m * 12 / periodsInYear;
-        balance += monthlyContributions;
-        totalDeposited += monthlyContributions;
-      }
-      yearlyData.push({
-        year: y,
-        deposited: totalDeposited,
-        interest: balance - totalDeposited,
-        balance: balance,
-      });
-    }
-
-    const finalBalance  = balance;
-    const totalInterest = finalBalance - totalDeposited;
-    const realValue     = finalBalance / Math.pow(1 + inf, years);
-    const multiplier    = totalDeposited > 0 ? (finalBalance / totalDeposited).toFixed(2) : '—';
-
-    animateValue('kpi-total', finalBalance, formatCurrency);
-    animateValue('kpi-deposited', totalDeposited, formatCurrency);
-    animateValue('kpi-interest', totalInterest, formatCurrency);
-
-    const realEl = document.getElementById('kpi-total-real');
-    realEl.textContent = inf > 0 ? `≈ ${formatCurrency(realValue)} real value` : 'Nominal value';
-    document.getElementById('kpi-multiplier').textContent = `${multiplier}× money growth`;
-
-    renderTable(yearlyData);
-    renderOrUpdateChart(yearlyData);
   }
 
   function formatCurrency(v) {
@@ -134,8 +54,226 @@
     requestAnimationFrame(step);
   }
 
+  function baseOptions(textMuted, border) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400, easing: 'easeOutCubic' },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            boxWidth: 12,
+            boxHeight: 12,
+            borderRadius: 3,
+            useBorderRadius: true,
+            color: textMuted,
+            padding: 16,
+            font: { size: 12 }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}`
+          },
+          backgroundColor: '#1c1b19',
+          titleColor: '#cdccca',
+          bodyColor: '#797876',
+          padding: 10,
+          cornerRadius: 8,
+          borderColor: border,
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: border + '55' },
+          ticks: {
+            color: textMuted,
+            font: { size: 11 },
+            maxTicksLimit: 12
+          }
+        },
+        y: {
+          grid: { color: border + '55' },
+          ticks: {
+            color: textMuted,
+            font: { size: 11 },
+            callback: v => {
+              if (v >= 1e6) return '€' + (v / 1e6).toFixed(1) + 'M';
+              if (v >= 1e3) return '€' + (v / 1e3).toFixed(0) + 'K';
+              return '€' + v;
+            }
+          }
+        }
+      }
+    };
+  }
+
+  function createStackedOptions(base) {
+    const stacked = {
+      ...base,
+      scales: {
+        ...base.scales,
+        x: { ...base.scales.x, stacked: true },
+        y: { ...base.scales.y, stacked: true },
+      }
+    };
+    return stacked;
+  }
+
+  function computeCompoundSchedule({ principal, monthly, rate, years, freq }) {
+    const yearlyData = [];
+    let balance = principal;
+    let totalDeposited = principal;
+
+    for (let y = 1; y <= years; y++) {
+      const periodsInYear = freq;
+      const ratePerPeriod = rate / freq;
+      for (let p = 0; p < periodsInYear; p++) {
+        balance *= (1 + ratePerPeriod);
+        const monthlyContributions = monthly * 12 / periodsInYear;
+        balance += monthlyContributions;
+        totalDeposited += monthlyContributions;
+      }
+      yearlyData.push({
+        year: y,
+        deposited: totalDeposited,
+        interest: balance - totalDeposited,
+        balance: balance,
+      });
+    }
+
+    return { yearlyData, finalBalance: balance, totalDeposited };
+  }
+
+  function computeDividendSchedule({ principal, monthly, startYield, dividendGrowth, priceGrowth, years, reinvest }) {
+    let portfolio     = principal;
+    let currentYield  = startYield;
+    let totalDivs     = 0;
+    const yearlyData  = [];
+
+    for (let year = 1; year <= years; year++) {
+      const contributions = monthly * 12;
+      portfolio += contributions;
+
+      const yearDivs = portfolio * currentYield;
+      totalDivs += yearDivs;
+
+      if (reinvest) {
+        portfolio += yearDivs;
+      }
+
+      portfolio *= (1 + priceGrowth);
+
+      const totalContribToDate = principal + monthly * 12 * year;
+      const yoc = totalContribToDate > 0 ? (yearDivs / totalContribToDate) : 0;
+
+      yearlyData.push({
+        year,
+        portfolio,
+        yearDivs,
+        cumulativeDivs: totalDivs,
+        yieldOnCost: yoc,
+      });
+
+      currentYield *= (1 + dividendGrowth);
+    }
+
+    const final = yearlyData[yearlyData.length - 1];
+    const totalContrib = principal + monthly * 12 * years;
+    const yocFinal     = totalContrib > 0 ? final.yearDivs / totalContrib : 0;
+
+    return { yearlyData, finalPortfolio: final.portfolio, totalDividends: totalDivs, yocFinal };
+  }
+
+  const inputs = {
+    principal: document.getElementById('principal'),
+    monthly:   document.getElementById('monthly'),
+    rate:      document.getElementById('rate'),
+    years:     document.getElementById('years'),
+    freq:      document.getElementById('freq'),
+    inflation: document.getElementById('inflation'),
+  };
+  const rateDisplay      = document.getElementById('rate-display');
+  const yearsDisplay     = document.getElementById('years-display');
+  const inflationDisplay = document.getElementById('inflation-display');
+
+  if (inputs.rate && inputs.years && inputs.inflation) {
+    inputs.rate.addEventListener('input', () => {
+      rateDisplay.textContent = parseFloat(inputs.rate.value).toFixed(1) + '%';
+      calculate();
+    });
+    inputs.years.addEventListener('input', () => {
+      yearsDisplay.textContent = inputs.years.value + ' yrs';
+      document.getElementById('table-badge').textContent = inputs.years.value + ' years';
+      calculate();
+    });
+    inputs.inflation.addEventListener('input', () => {
+      inflationDisplay.textContent = parseFloat(inputs.inflation.value).toFixed(1) + '%';
+      calculate();
+    });
+    ['principal', 'monthly', 'freq'].forEach(k => {
+      inputs[k].addEventListener('input', calculate);
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      inputs.principal.value = 10000;
+      inputs.monthly.value   = 200;
+      inputs.rate.value      = 7;
+      inputs.years.value     = 20;
+      inputs.freq.value      = 12;
+      inputs.inflation.value = 2.5;
+      rateDisplay.textContent      = '7.0%';
+      yearsDisplay.textContent     = '20 yrs';
+      inflationDisplay.textContent = '2.5%';
+      document.getElementById('table-badge').textContent = '20 years';
+      calculate();
+    });
+  }
+
+  function calculate() {
+    if (!inputs.principal) return;
+
+    const principal = Math.max(0, parseFloat(inputs.principal.value) || 0);
+    const monthly   = Math.max(0, parseFloat(inputs.monthly.value)   || 0);
+    const rate      = Math.max(0, parseFloat(inputs.rate.value)      || 0) / 100;
+    const years     = Math.max(1, parseInt(inputs.years.value)       || 1);
+    const freq      = parseInt(inputs.freq.value) || 12;
+    const inflation = Math.max(0, parseFloat(inputs.inflation.value) || 0) / 100;
+
+    const { yearlyData, finalBalance, totalDeposited } = computeCompoundSchedule({
+      principal,
+      monthly,
+      rate,
+      years,
+      freq,
+    });
+
+    const realValue  = finalBalance / Math.pow(1 + inflation, years);
+    const multiplier = totalDeposited > 0 ? (finalBalance / totalDeposited).toFixed(2) : '—';
+
+    animateValue('kpi-total', finalBalance, formatCurrency);
+    animateValue('kpi-deposited', totalDeposited, formatCurrency);
+    animateValue('kpi-interest', finalBalance - totalDeposited, formatCurrency);
+
+    const realEl = document.getElementById('kpi-total-real');
+    if (realEl) {
+      realEl.textContent = inflation > 0 ? `≈ ${formatCurrency(realValue)} real value` : 'Nominal value';
+    }
+    const multEl = document.getElementById('kpi-multiplier');
+    if (multEl) {
+      multEl.textContent = `${multiplier}× money growth`;
+    }
+
+    renderTable(yearlyData);
+    renderOrUpdateChart(yearlyData);
+  }
+
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
+    if (!tbody) return;
     tbody.innerHTML = data.map(row => `
       <tr>
         <td>Year ${row.year}</td>
@@ -152,44 +290,26 @@
 
   document.querySelectorAll('.chart-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.chart-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
-      tab.classList.add('active'); tab.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.chart-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
       currentChartType = tab.dataset.chart;
       updateChart();
     });
   });
 
-  function renderOrUpdateChart(data) { lastYearlyData = data; updateChart(); }
-
-  function baseOptions(textMuted, border) {
-    return {
-      responsive: true, maintainAspectRatio: false,
-      animation: { duration: 400, easing: 'easeOutCubic' },
-      plugins: {
-        legend: {
-          display: true, position: 'bottom',
-          labels: { boxWidth: 12, boxHeight: 12, borderRadius: 3, useBorderRadius: true, color: textMuted, padding: 16, font: { size: 12 } }
-        },
-        tooltip: {
-          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` },
-          backgroundColor: '#1c1b19', titleColor: '#cdccca', bodyColor: '#797876',
-          padding: 10, cornerRadius: 8, borderColor: border, borderWidth: 1
-        }
-      },
-      scales: {
-        x: { grid: { color: border + '55' }, ticks: { color: textMuted, font: { size: 11 }, maxTicksLimit: 12 } },
-        y: { grid: { color: border + '55' }, ticks: { color: textMuted, font: { size: 11 }, callback: v => {
-          if (v >= 1e6) return '€'+(v/1e6).toFixed(1)+'M';
-          if (v >= 1e3) return '€'+(v/1e3).toFixed(0)+'K';
-          return '€'+v;
-        } } }
-      }
-    };
+  function renderOrUpdateChart(data) {
+    lastYearlyData = data;
+    updateChart();
   }
 
   function updateChart() {
     const data = lastYearlyData;
     if (!data.length) return;
+
     const cs = getComputedStyle(document.documentElement);
     const primary   = cs.getPropertyValue('--color-primary').trim();
     const success   = cs.getPropertyValue('--color-success').trim();
@@ -201,28 +321,91 @@
     const balances = data.map(d => Math.round(d.balance));
     const deposited= data.map(d => Math.round(d.deposited));
     const interest = data.map(d => Math.round(d.interest));
-    const ctx = document.getElementById('main-chart').getContext('2d');
+
+    const canvas = document.getElementById('main-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
     Chart.defaults.color = textMuted;
     Chart.defaults.borderColor = border;
 
+    const baseOpts = baseOptions(textMuted, border);
     let config;
-    const opts = baseOptions(textMuted, border);
 
     if (currentChartType === 'bar') {
-      config = { type: 'bar', data: { labels, datasets: [{ label: 'Balance', data: balances, backgroundColor: primary + '99', borderColor: primary, borderWidth: 1, borderRadius: 4 }] }, options: opts };
+      config = {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Balance',
+            data: balances,
+            backgroundColor: primary + '99',
+            borderColor: primary,
+            borderWidth: 1,
+            borderRadius: 4,
+          }],
+        },
+        options: baseOpts,
+      };
     } else if (currentChartType === 'stacked') {
-      const stackedOpts = JSON.parse(JSON.stringify(opts));
-      stackedOpts.scales.x.stacked = true;
-      stackedOpts.scales.y.stacked = true;
-      config = { type: 'bar', data: { labels, datasets: [
-        { label: 'Deposited', data: deposited, backgroundColor: gold + 'cc',   borderColor: gold,   borderWidth: 1, stack: 'main' },
-        { label: 'Interest',  data: interest,  backgroundColor: success + 'cc',borderColor: success,borderWidth: 1, stack: 'main' }
-      ]}, options: stackedOpts };
+      const stackedOpts = createStackedOptions(baseOpts);
+      config = {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Deposited',
+              data: deposited,
+              backgroundColor: gold + 'cc',
+              borderColor: gold,
+              borderWidth: 1,
+              stack: 'main',
+            },
+            {
+              label: 'Interest',
+              data: interest,
+              backgroundColor: success + 'cc',
+              borderColor: success,
+              borderWidth: 1,
+              stack: 'main',
+            },
+          ],
+        },
+        options: stackedOpts,
+      };
     } else {
-      config = { type: 'line', data: { labels, datasets: [
-        { label: 'Balance',   data: balances, borderColor: primary, backgroundColor: primary + '18', fill: true, tension: 0.35, pointRadius: balances.length > 20 ? 0 : 3, pointHoverRadius: 5 },
-        { label: 'Deposited', data: deposited, borderColor: gold, backgroundColor: 'transparent', fill: false, tension: 0.35, borderDash: [5,3], pointRadius: 0, pointHoverRadius: 5 }
-      ]}, options: opts };
+      config = {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Balance',
+              data: balances,
+              borderColor: primary,
+              backgroundColor: primary + '18',
+              fill: true,
+              tension: 0.35,
+              pointRadius: balances.length > 20 ? 0 : 3,
+              pointHoverRadius: 5,
+            },
+            {
+              label: 'Deposited',
+              data: deposited,
+              borderColor: gold,
+              backgroundColor: 'transparent',
+              fill: false,
+              tension: 0.35,
+              borderDash: [5, 3],
+              pointRadius: 0,
+              pointHoverRadius: 5,
+            },
+          ],
+        },
+        options: baseOpts,
+      };
     }
 
     if (chartInstance) chartInstance.destroy();
@@ -273,76 +456,54 @@
       divInputs[k].addEventListener('change', calculateDividends);
     });
 
-    document.getElementById('btn-div-reset').addEventListener('click', () => {
-      divInputs.principal.value   = 10000;
-      divInputs.monthly.value     = 200;
-      divInputs.yield.value       = 4;
-      divInputs.divGrowth.value   = 5;
-      divInputs.priceGrowth.value = 5;
-      divInputs.years.value       = 20;
-      divInputs.reinvest.checked  = true;
+    const resetDivBtn = document.getElementById('btn-div-reset');
+    if (resetDivBtn) {
+      resetDivBtn.addEventListener('click', () => {
+        divInputs.principal.value   = 10000;
+        divInputs.monthly.value     = 200;
+        divInputs.yield.value       = 4;
+        divInputs.divGrowth.value   = 5;
+        divInputs.priceGrowth.value = 5;
+        divInputs.years.value       = 20;
+        divInputs.reinvest.checked  = true;
 
-      divDisplays.yield.textContent       = '4.0%';
-      divDisplays.divGrowth.textContent   = '5.0%';
-      divDisplays.priceGrowth.textContent = '5.0%';
-      divDisplays.years.textContent       = '20 yrs';
-      divDisplays.tableBadge.textContent  = '20 years';
+        divDisplays.yield.textContent       = '4.0%';
+        divDisplays.divGrowth.textContent   = '5.0%';
+        divDisplays.priceGrowth.textContent = '5.0%';
+        divDisplays.years.textContent       = '20 yrs';
+        divDisplays.tableBadge.textContent  = '20 years';
 
-      calculateDividends();
-    });
+        calculateDividends();
+      });
+    }
   }
 
   function calculateDividends() {
     if (!divInputs.principal) return;
 
-    const P           = Math.max(0, parseFloat(divInputs.principal.value) || 0);
-    const m           = Math.max(0, parseFloat(divInputs.monthly.value)   || 0);
-    const y0          = Math.max(0, parseFloat(divInputs.yield.value)     || 0) / 100;
-    const gDiv        = Math.max(0, parseFloat(divInputs.divGrowth.value) || 0) / 100;
-    const gPrice      = parseFloat(divInputs.priceGrowth.value) / 100;
-    const years       = Math.max(1, parseInt(divInputs.years.value) || 1);
-    const reinvest    = !!divInputs.reinvest.checked;
+    const principal    = Math.max(0, parseFloat(divInputs.principal.value) || 0);
+    const monthly      = Math.max(0, parseFloat(divInputs.monthly.value)   || 0);
+    const startYield   = Math.max(0, parseFloat(divInputs.yield.value)     || 0) / 100;
+    const dividendGrowth = Math.max(0, parseFloat(divInputs.divGrowth.value) || 0) / 100;
+    const priceGrowth  = parseFloat(divInputs.priceGrowth.value) / 100;
+    const years        = Math.max(1, parseInt(divInputs.years.value) || 1);
+    const reinvest     = !!divInputs.reinvest.checked;
 
-    let portfolio     = P;
-    let currentYield  = y0;
-    let totalDivs     = 0;
-    const yearlyData  = [];
-
-    for (let year = 1; year <= years; year++) {
-      const contributions = m * 12;
-      portfolio += contributions;
-
-      const yearDivs = portfolio * currentYield;
-      totalDivs += yearDivs;
-
-      if (reinvest) {
-        portfolio += yearDivs;
-      }
-
-      portfolio *= (1 + gPrice);
-
-      const totalContribToDate = P + m * 12 * year;
-      const yoc = totalContribToDate > 0 ? (yearDivs / totalContribToDate) : 0;
-
-      yearlyData.push({
-        year,
-        portfolio,
-        yearDivs,
-        cumulativeDivs: totalDivs,
-        yieldOnCost: yoc,
-      });
-
-      currentYield *= (1 + gDiv);
-    }
+    const { yearlyData, finalPortfolio, totalDividends, yocFinal } = computeDividendSchedule({
+      principal,
+      monthly,
+      startYield,
+      dividendGrowth,
+      priceGrowth,
+      years,
+      reinvest,
+    });
 
     lastDividendData = yearlyData;
-    const last       = yearlyData[yearlyData.length - 1];
-    const totalContrib = P + m * 12 * years;
-    const yocFinal     = totalContrib > 0 ? last.yearDivs / totalContrib : 0;
 
-    animateValue('div-kpi-portfolio',      last.portfolio, formatCurrency);
-    animateValue('div-kpi-finalIncome',    last.yearDivs,   formatCurrency);
-    animateValue('div-kpi-totalDividends', totalDivs,       formatCurrency);
+    animateValue('div-kpi-portfolio',      finalPortfolio, formatCurrency);
+    animateValue('div-kpi-finalIncome',    yearlyData[yearlyData.length - 1].yearDivs, formatCurrency);
+    animateValue('div-kpi-totalDividends', totalDividends, formatCurrency);
 
     const yocEl = document.getElementById('div-kpi-yoc');
     if (yocEl) {
@@ -431,12 +592,12 @@
       tab.classList.add('active');
       const page = tab.dataset.page;
       if (page === 'dividends') {
-        pageCompound.hidden  = true;
-        pageDividends.hidden = false;
+        if (pageCompound) pageCompound.hidden  = true;
+        if (pageDividends) pageDividends.hidden = false;
         calculateDividends();
       } else {
-        pageCompound.hidden  = false;
-        pageDividends.hidden = true;
+        if (pageCompound) pageCompound.hidden  = false;
+        if (pageDividends) pageDividends.hidden = true;
         calculate();
       }
     });
