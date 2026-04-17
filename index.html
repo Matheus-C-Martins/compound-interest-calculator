@@ -28,16 +28,19 @@
     </a>
     <div class="header-actions">
       <nav class="nav-tabs" aria-label="Calculator mode">
-        <button class="nav-tab active" data-page="compound">Compound</button>
-        <button class="nav-tab" data-page="dividends">Dividends</button>
+        <button class="nav-tab active" type="button" data-page="compound" aria-pressed="true">Compound</button>
+        <button class="nav-tab" type="button" data-page="dividends" aria-pressed="false">Dividends</button>
       </nav>
-      <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode" title="Toggle theme">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Toggle theme">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
     </div>
   </header>
 
   <main class="main">
+    <!-- Visually hidden live region for KPIs -->
+    <div id="kpi-live-summary" aria-live="polite" class="sr-only"></div>
+
     <!-- Compound interest page -->
     <section id="page-compound">
       <h1 class="page-title">Compound Interest Calculator</h1>
@@ -100,7 +103,7 @@
             </div>
 
             <div class="btn-row">
-              <button class="btn btn-secondary btn-full" id="btn-reset">Reset</button>
+              <button class="btn btn-secondary btn-full" type="button" id="btn-reset">Reset</button>
             </div>
           </div>
         </aside>
@@ -127,10 +130,10 @@
           <div class="card chart-card">
             <div class="chart-header">
               <h2 class="section-title">Growth Over Time</h2>
-              <div class="chart-tabs" role="tablist">
-                <button class="chart-tab active" role="tab" aria-selected="true" data-chart="bar">Balance</button>
-                <button class="chart-tab" role="tab" aria-selected="false" data-chart="stacked">Stacked</button>
-                <button class="chart-tab" role="tab" aria-selected="false" data-chart="line">Cumulative</button>
+              <div class="chart-tabs">
+                <button class="chart-tab active" type="button" data-chart="bar">Balance</button>
+                <button class="chart-tab" type="button" data-chart="stacked">Stacked</button>
+                <button class="chart-tab" type="button" data-chart="line">Cumulative</button>
               </div>
             </div>
             <div class="chart-container">
@@ -228,7 +231,7 @@
             </div>
 
             <div class="btn-row">
-              <button class="btn btn-secondary btn-full" id="btn-div-reset">Reset</button>
+              <button class="btn btn-secondary btn-full" type="button" id="btn-div-reset">Reset</button>
             </div>
           </div>
         </aside>
