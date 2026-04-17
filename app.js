@@ -200,6 +200,8 @@
   const yearsDisplay     = document.getElementById('years-display');
   const inflationDisplay = document.getElementById('inflation-display');
 
+  const kpiLiveRegion = document.getElementById('kpi-live-summary');
+
   if (inputs.rate && inputs.years && inputs.inflation) {
     inputs.rate.addEventListener('input', () => {
       rateDisplay.textContent = parseFloat(inputs.rate.value).toFixed(1) + '%';
@@ -218,19 +220,22 @@
       inputs[k].addEventListener('input', calculate);
     });
 
-    document.getElementById('btn-reset').addEventListener('click', () => {
-      inputs.principal.value = 10000;
-      inputs.monthly.value   = 200;
-      inputs.rate.value      = 7;
-      inputs.years.value     = 20;
-      inputs.freq.value      = 12;
-      inputs.inflation.value = 2.5;
-      rateDisplay.textContent      = '7.0%';
-      yearsDisplay.textContent     = '20 yrs';
-      inflationDisplay.textContent = '2.5%';
-      document.getElementById('table-badge').textContent = '20 years';
-      calculate();
-    });
+    const resetBtn = document.getElementById('btn-reset');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        inputs.principal.value = 10000;
+        inputs.monthly.value   = 200;
+        inputs.rate.value      = 7;
+        inputs.years.value     = 20;
+        inputs.freq.value      = 12;
+        inputs.inflation.value = 2.5;
+        rateDisplay.textContent      = '7.0%';
+        yearsDisplay.textContent     = '20 yrs';
+        inflationDisplay.textContent = '2.5%';
+        document.getElementById('table-badge').textContent = '20 years';
+        calculate();
+      });
+    }
   }
 
   function calculate() {
@@ -267,6 +272,10 @@
       multEl.textContent = `${multiplier}× money growth`;
     }
 
+    if (kpiLiveRegion) {
+      kpiLiveRegion.textContent = `Final balance ${formatCurrency(finalBalance)}, total deposited ${formatCurrency(totalDeposited)}, interest earned ${formatCurrency(finalBalance - totalDeposited)} over ${years} years.`;
+    }
+
     renderTable(yearlyData);
     renderOrUpdateChart(yearlyData);
   }
@@ -290,12 +299,8 @@
 
   document.querySelectorAll('.chart-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.chart-tab').forEach(t => {
-        t.classList.remove('active');
-        t.setAttribute('aria-selected', 'false');
-      });
+      document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      tab.setAttribute('aria-selected', 'true');
       currentChartType = tab.dataset.chart;
       updateChart();
     });
@@ -588,8 +593,13 @@
 
   modeTabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      modeTabs.forEach(t => t.classList.remove('active'));
+      modeTabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-pressed', 'false');
+      });
       tab.classList.add('active');
+      tab.setAttribute('aria-pressed', 'true');
+
       const page = tab.dataset.page;
       if (page === 'dividends') {
         if (pageCompound) pageCompound.hidden  = true;
