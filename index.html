@@ -130,14 +130,18 @@
           <div class="card chart-card">
             <div class="chart-header">
               <h2 class="section-title">Growth Over Time</h2>
-              <div class="chart-tabs">
-                <button class="chart-tab active" type="button" data-chart="bar">Balance</button>
-                <button class="chart-tab" type="button" data-chart="stacked">Stacked</button>
-                <button class="chart-tab" type="button" data-chart="line">Cumulative</button>
+              <div class="chart-tabs" role="tablist" aria-label="Chart view">
+                <button class="chart-tab active" type="button" role="tab" id="chart-tab-bar" aria-selected="true" aria-controls="chart-panel-bar" tabindex="0" data-chart="bar">Balance</button>
+                <button class="chart-tab" type="button" role="tab" id="chart-tab-stacked" aria-selected="false" aria-controls="chart-panel-stacked" tabindex="-1" data-chart="stacked">Stacked</button>
+                <button class="chart-tab" type="button" role="tab" id="chart-tab-line" aria-selected="false" aria-controls="chart-panel-line" tabindex="-1" data-chart="line">Cumulative</button>
               </div>
             </div>
             <div class="chart-container">
-              <canvas id="main-chart" aria-label="Compound interest growth chart"></canvas>
+              <div id="chart-panel-bar" role="tabpanel" aria-labelledby="chart-tab-bar">
+                <canvas id="main-chart" aria-label="Compound interest growth chart"></canvas>
+              </div>
+              <div id="chart-panel-stacked" role="tabpanel" aria-labelledby="chart-tab-stacked" hidden></div>
+              <div id="chart-panel-line" role="tabpanel" aria-labelledby="chart-tab-line" hidden></div>
             </div>
           </div>
 
