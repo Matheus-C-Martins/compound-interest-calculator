@@ -10,7 +10,7 @@ This project is built as a single static page (no backend, no build step require
 
 ## Live demo
 
-> _Add your deployment URL here once you publish the app (e.g. GitHub Pages, Vercel, Netlify)._ 
+> https://matheus-c-martins.github.io/compound-interest-calculator/
 
 
 ## Features
