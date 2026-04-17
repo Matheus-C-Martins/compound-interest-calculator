@@ -39,7 +39,7 @@
 
   <main class="main">
     <!-- Visually hidden live region for KPIs -->
-    <div id="kpi-live-summary" aria-live="polite" class="sr-only"></div>
+    <div id="kpi-live-summary" aria-live="polite" role="status" class="sr-only"></div>
 
     <!-- Compound interest page -->
     <section id="page-compound">
@@ -102,9 +102,26 @@
               </div>
             </div>
 
+            <div class="form-group">
+              <span class="form-label">Presets</span>
+              <div class="pill-row" role="radiogroup" aria-label="Preset scenarios for compound interest">
+                <button type="button" class="pill pill--active" data-preset="compound-conservative">Conservative</button>
+                <button type="button" class="pill" data-preset="compound-balanced">Balanced</button>
+                <button type="button" class="pill" data-preset="compound-aggressive">Aggressive</button>
+              </div>
+            </div>
+
             <div class="btn-row">
               <button class="btn btn-secondary btn-full" type="button" id="btn-reset">Reset</button>
             </div>
+          </div>
+
+          <div class="card card--muted">
+            <h2 class="card-title card-title--small">How this projection works</h2>
+            <p class="helper-text">
+              We assume a constant annual return, regular monthly contributions, and compounding at the chosen frequency.
+              Results are simplified and do not include taxes or fees.
+            </p>
           </div>
         </aside>
 
@@ -228,15 +245,32 @@
 
             <div class="form-group">
               <label class="form-label" for="div-reinvest">Dividend Reinvestment</label>
-              <div style="display:flex;align-items:center;gap:var(--space-2);">
-                <input id="div-reinvest" type="checkbox" checked />
-                <span style="font-size:var(--text-sm);color:var(--color-text-muted);">Reinvest dividends (DRIP)</span>
+              <div class="checkbox-row">
+                <input id="div-reinvest" type="checkbox" />
+                <label for="div-reinvest" class="checkbox-label">Reinvest dividends (DRIP)</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <span class="form-label">Presets</span>
+              <div class="pill-row" role="radiogroup" aria-label="Preset scenarios for dividend investing">
+                <button type="button" class="pill pill--active" data-preset="div-conservative">Conservative</button>
+                <button type="button" class="pill" data-preset="div-balanced">Balanced</button>
+                <button type="button" class="pill" data-preset="div-aggressive">Aggressive</button>
               </div>
             </div>
 
             <div class="btn-row">
               <button class="btn btn-secondary btn-full" type="button" id="btn-div-reset">Reset</button>
             </div>
+          </div>
+
+          <div class="card card--muted">
+            <h2 class="card-title card-title--small">How this projection works</h2>
+            <p class="helper-text">
+              We assume a constant dividend yield that grows at your chosen rate, optional reinvestment, and a constant stock price growth.
+              Taxes, fees, and sequence of returns risk are not included.
+            </p>
           </div>
         </aside>
 
