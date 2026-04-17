@@ -112,7 +112,7 @@
   }
 
   function createStackedOptions(base) {
-    const stacked = {
+    return {
       ...base,
       scales: {
         ...base.scales,
@@ -120,7 +120,6 @@
         y: { ...base.scales.y, stacked: true },
       }
     };
-    return stacked;
   }
 
   function computeCompoundSchedule({ principal, monthly, rate, years, freq }) {
@@ -202,6 +201,84 @@
 
   const kpiLiveRegion = document.getElementById('kpi-live-summary');
 
+  const compoundPresets = {
+    'compound-conservative': { principal: 5000, monthly: 150, rate: 5, years: 20, freq: 12, inflation: 2 },
+    'compound-balanced':    { principal: 10000, monthly: 200, rate: 7, years: 25, freq: 12, inflation: 2.5 },
+    'compound-aggressive':  { principal: 10000, monthly: 350, rate: 9, years: 30, freq: 12, inflation: 3 },
+  };
+
+  const dividendPresets = {
+    'div-conservative': { principal: 5000, monthly: 150, yield: 3, divGrowth: 3, priceGrowth: 3, years: 20, reinvest: true },
+    'div-balanced':     { principal: 10000, monthly: 200, yield: 4, divGrowth: 5, priceGrowth: 4, years: 25, reinvest: true },
+    'div-aggressive':   { principal: 10000, monthly: 300, yield: 5, divGrowth: 7, priceGrowth: 5, years: 30, reinvest: false },
+  };
+
+  function applyCompoundPreset(key) {
+    const preset = compoundPresets[key];
+    if (!preset) return;
+    inputs.principal.value = preset.principal;
+    inputs.monthly.value   = preset.monthly;
+    inputs.rate.value      = preset.rate;
+    inputs.years.value     = preset.years;
+    inputs.freq.value      = preset.freq;
+    inputs.inflation.value = preset.inflation;
+
+    rateDisplay.textContent      = preset.rate.toFixed(1) + '%';
+    yearsDisplay.textContent     = preset.years + ' yrs';
+    inflationDisplay.textContent = preset.inflation.toFixed(1) + '%';
+    const badge = document.getElementById('table-badge');
+    if (badge) badge.textContent = preset.years + ' years';
+
+    if (kpiLiveRegion) {
+      kpiLiveRegion.textContent = `Compound preset applied: ${key.replace('compound-','')}, ${preset.years} years at ${preset.rate.toFixed(1)}% with monthly contributions of €${preset.monthly}.`;
+    }
+
+    calculate();
+  }
+
+  function applyDividendPreset(key) {
+    const preset = dividendPresets[key];
+    if (!preset) return;
+
+    divInputs.principal.value   = preset.principal;
+    divInputs.monthly.value     = preset.monthly;
+    divInputs.yield.value       = preset.yield;
+    divInputs.divGrowth.value   = preset.divGrowth;
+    divInputs.priceGrowth.value = preset.priceGrowth;
+    divInputs.years.value       = preset.years;
+    divInputs.reinvest.checked  = preset.reinvest;
+
+    divDisplays.yield.textContent       = preset.yield.toFixed(1) + '%';
+    divDisplays.divGrowth.textContent   = preset.divGrowth.toFixed(1) + '%';
+    divDisplays.priceGrowth.textContent = preset.priceGrowth.toFixed(1) + '%';
+    divDisplays.years.textContent       = preset.years + ' yrs';
+    divDisplays.tableBadge.textContent  = preset.years + ' years';
+
+    if (kpiLiveRegion) {
+      kpiLiveRegion.textContent = `Dividend preset applied: ${key.replace('div-','')}, ${preset.years} years, ${preset.yield.toFixed(1)}% starting yield and ${preset.divGrowth.toFixed(1)}% dividend growth.`;
+    }
+
+    calculateDividends();
+  }
+
+  const compoundPresetButtons = Array.from(document.querySelectorAll('[data-preset^="compound-"]'));
+  compoundPresetButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      compoundPresetButtons.forEach(b => b.classList.remove('pill--active'));
+      btn.classList.add('pill--active');
+      applyCompoundPreset(btn.dataset.preset);
+    });
+  });
+
+  const dividendPresetButtons = Array.from(document.querySelectorAll('[data-preset^="div-"]'));
+  dividendPresetButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      dividendPresetButtons.forEach(b => b.classList.remove('pill--active'));
+      btn.classList.add('pill--active');
+      applyDividendPreset(btn.dataset.preset);
+    });
+  });
+
   if (inputs.rate && inputs.years && inputs.inflation) {
     inputs.rate.addEventListener('input', () => {
       rateDisplay.textContent = parseFloat(inputs.rate.value).toFixed(1) + '%';
@@ -233,6 +310,11 @@
         yearsDisplay.textContent     = '20 yrs';
         inflationDisplay.textContent = '2.5%';
         document.getElementById('table-badge').textContent = '20 years';
+
+        compoundPresetButtons.forEach(b => b.classList.remove('pill--active'));
+        const defaultPreset = document.querySelector('[data-preset="compound-conservative"]');
+        if (defaultPreset) defaultPreset.classList.add('pill--active');
+
         calculate();
       });
     }
@@ -298,7 +380,6 @@
   let lastYearlyData = [];
 
   const chartTabs = Array.from(document.querySelectorAll('.chart-tab'));
-  const tabList = document.querySelector('.chart-tabs');
   const tabPanels = {
     bar: document.getElementById('chart-panel-bar'),
     stacked: document.getElementById('chart-panel-stacked'),
@@ -317,11 +398,7 @@
 
     Object.entries(tabPanels).forEach(([type, panel]) => {
       if (!panel) return;
-      if (type === targetType) {
-        panel.hidden = false;
-      } else {
-        panel.hidden = true;
-      }
+      panel.hidden = type !== targetType;
     });
 
     currentChartType = targetType;
@@ -523,13 +600,17 @@
         divInputs.divGrowth.value   = 5;
         divInputs.priceGrowth.value = 5;
         divInputs.years.value       = 20;
-        divInputs.reinvest.checked  = true;
+        divInputs.reinvest.checked  = false;
 
         divDisplays.yield.textContent       = '4.0%';
         divDisplays.divGrowth.textContent   = '5.0%';
         divDisplays.priceGrowth.textContent = '5.0%';
         divDisplays.years.textContent       = '20 yrs';
         divDisplays.tableBadge.textContent  = '20 years';
+
+        dividendPresetButtons.forEach(b => b.classList.remove('pill--active'));
+        const defaultDivPreset = document.querySelector('[data-preset="div-conservative"]');
+        if (defaultDivPreset) defaultDivPreset.classList.add('pill--active');
 
         calculateDividends();
       });
@@ -539,13 +620,13 @@
   function calculateDividends() {
     if (!divInputs.principal) return;
 
-    const principal    = Math.max(0, parseFloat(divInputs.principal.value) || 0);
-    const monthly      = Math.max(0, parseFloat(divInputs.monthly.value)   || 0);
-    const startYield   = Math.max(0, parseFloat(divInputs.yield.value)     || 0) / 100;
+    const principal      = Math.max(0, parseFloat(divInputs.principal.value) || 0);
+    const monthly        = Math.max(0, parseFloat(divInputs.monthly.value)   || 0);
+    const startYield     = Math.max(0, parseFloat(divInputs.yield.value)     || 0) / 100;
     const dividendGrowth = Math.max(0, parseFloat(divInputs.divGrowth.value) || 0) / 100;
-    const priceGrowth  = parseFloat(divInputs.priceGrowth.value) / 100;
-    const years        = Math.max(1, parseInt(divInputs.years.value) || 1);
-    const reinvest     = !!divInputs.reinvest.checked;
+    const priceGrowth    = parseFloat(divInputs.priceGrowth.value) / 100;
+    const years          = Math.max(1, parseInt(divInputs.years.value) || 1);
+    const reinvest       = !!divInputs.reinvest.checked;
 
     const { yearlyData, finalPortfolio, totalDividends, yocFinal } = computeDividendSchedule({
       principal,
@@ -558,7 +639,6 @@
     });
 
     lastDividendData = yearlyData;
-
     const last = yearlyData[yearlyData.length - 1];
 
     animateValue('div-kpi-portfolio',      finalPortfolio, formatCurrency);
@@ -672,6 +752,16 @@
     });
   });
 
-  calculate();
-  calculateDividends();
+  // Initialise defaults
+  if (compoundPresetButtons.length) {
+    applyCompoundPreset('compound-conservative');
+  } else {
+    calculate();
+  }
+
+  if (dividendPresetButtons.length) {
+    applyDividendPreset('div-conservative');
+  } else {
+    calculateDividends();
+  }
 })();
