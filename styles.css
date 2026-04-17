@@ -587,6 +587,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* 8. Charts */
 .chart-card {
   margin-bottom: var(--space-6);
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-header {
@@ -627,7 +629,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .chart-container {
   position: relative;
-  height: 280px;
+  flex: 1;
+  min-height: 280px;
 }
 
 /* 9. Tables */

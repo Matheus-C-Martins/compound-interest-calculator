@@ -380,11 +380,6 @@
   let lastYearlyData = [];
 
   const chartTabs = Array.from(document.querySelectorAll('.chart-tab'));
-  const tabPanels = {
-    bar: document.getElementById('chart-panel-bar'),
-    stacked: document.getElementById('chart-panel-stacked'),
-    line: document.getElementById('chart-panel-line'),
-  };
 
   function activateChartTab(nextTab) {
     const targetType = nextTab.dataset.chart;
@@ -394,11 +389,6 @@
       tab.classList.toggle('active', isActive);
       tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
       tab.setAttribute('tabindex', isActive ? '0' : '-1');
-    });
-
-    Object.entries(tabPanels).forEach(([type, panel]) => {
-      if (!panel) return;
-      panel.hidden = type !== targetType;
     });
 
     currentChartType = targetType;
