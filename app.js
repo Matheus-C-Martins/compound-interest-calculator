@@ -297,12 +297,65 @@
   let currentChartType = 'bar';
   let lastYearlyData = [];
 
-  document.querySelectorAll('.chart-tab').forEach(tab => {
+  const chartTabs = Array.from(document.querySelectorAll('.chart-tab'));
+  const tabList = document.querySelector('.chart-tabs');
+  const tabPanels = {
+    bar: document.getElementById('chart-panel-bar'),
+    stacked: document.getElementById('chart-panel-stacked'),
+    line: document.getElementById('chart-panel-line'),
+  };
+
+  function activateChartTab(nextTab) {
+    const targetType = nextTab.dataset.chart;
+
+    chartTabs.forEach(tab => {
+      const isActive = tab === nextTab;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+
+    Object.entries(tabPanels).forEach(([type, panel]) => {
+      if (!panel) return;
+      if (type === targetType) {
+        panel.hidden = false;
+      } else {
+        panel.hidden = true;
+      }
+    });
+
+    currentChartType = targetType;
+    updateChart();
+    nextTab.focus();
+  }
+
+  chartTabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentChartType = tab.dataset.chart;
-      updateChart();
+      activateChartTab(tab);
+    });
+
+    tab.addEventListener('keydown', (event) => {
+      const { key } = event;
+      const currentIndex = chartTabs.indexOf(tab);
+      let nextIndex = null;
+
+      if (key === 'ArrowRight' || key === 'ArrowDown') {
+        event.preventDefault();
+        nextIndex = (currentIndex + 1) % chartTabs.length;
+      } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+        event.preventDefault();
+        nextIndex = (currentIndex - 1 + chartTabs.length) % chartTabs.length;
+      } else if (key === 'Home') {
+        event.preventDefault();
+        nextIndex = 0;
+      } else if (key === 'End') {
+        event.preventDefault();
+        nextIndex = chartTabs.length - 1;
+      }
+
+      if (nextIndex !== null) {
+        activateChartTab(chartTabs[nextIndex]);
+      }
     });
   });
 
