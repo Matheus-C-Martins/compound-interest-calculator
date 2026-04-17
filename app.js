@@ -506,13 +506,19 @@
 
     lastDividendData = yearlyData;
 
+    const last = yearlyData[yearlyData.length - 1];
+
     animateValue('div-kpi-portfolio',      finalPortfolio, formatCurrency);
-    animateValue('div-kpi-finalIncome',    yearlyData[yearlyData.length - 1].yearDivs, formatCurrency);
+    animateValue('div-kpi-finalIncome',    last.yearDivs, formatCurrency);
     animateValue('div-kpi-totalDividends', totalDividends, formatCurrency);
 
     const yocEl = document.getElementById('div-kpi-yoc');
     if (yocEl) {
       yocEl.textContent = `Yield on cost in final year: ${(yocFinal * 100).toFixed(2)}%`;
+    }
+
+    if (kpiLiveRegion) {
+      kpiLiveRegion.textContent = `Dividend projection: final portfolio ${formatCurrency(finalPortfolio)}, annual dividends in final year ${formatCurrency(last.yearDivs)}, total dividends ${formatCurrency(totalDividends)} over ${years} years.`;
     }
 
     renderDividendTable(yearlyData);
